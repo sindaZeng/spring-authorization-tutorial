@@ -5,22 +5,21 @@ import com.nimbusds.jose.jwk.RSAKey;
 import com.nimbusds.jose.jwk.source.ImmutableJWKSet;
 import com.nimbusds.jose.jwk.source.JWKSource;
 import com.nimbusds.jose.proc.SecurityContext;
-import lombok.val;
 import org.springframework.context.annotation.Bean;
 import org.springframework.core.annotation.Order;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.datasource.embedded.EmbeddedDatabase;
-import org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseBuilder;
-import org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseType;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.OAuth2AuthorizationServerConfiguration;
+import org.springframework.security.config.annotation.web.configurers.oauth2.server.authorization.OAuth2AuthorizationServerConfigurer;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.oauth2.core.AuthorizationGrantType;
 import org.springframework.security.oauth2.core.ClientAuthenticationMethod;
+import org.springframework.security.oauth2.core.OAuth2TokenFormat;
 import org.springframework.security.oauth2.core.oidc.OidcScopes;
+import org.springframework.security.oauth2.jwt.NimbusJwtEncoder;
 import org.springframework.security.oauth2.server.authorization.*;
 import org.springframework.security.oauth2.server.authorization.client.JdbcRegisteredClientRepository;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClient;
@@ -28,9 +27,11 @@ import org.springframework.security.oauth2.server.authorization.client.Registere
 import org.springframework.security.oauth2.server.authorization.config.ClientSettings;
 import org.springframework.security.oauth2.server.authorization.config.ProviderSettings;
 import org.springframework.security.oauth2.server.authorization.config.TokenSettings;
+import org.springframework.security.oauth2.server.authorization.token.*;
 import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.LoginUrlAuthenticationEntryPoint;
+import org.springframework.security.web.util.matcher.RequestMatcher;
 
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
@@ -46,7 +47,23 @@ public class AuthorizationServerConfig {
     @Order(1)
     public SecurityFilterChain authorizationServerSecurityFilterChain(HttpSecurity http)
             throws Exception {
-        OAuth2AuthorizationServerConfiguration.applyDefaultSecurity(http);
+        OAuth2AuthorizationServerConfigurer<HttpSecurity> authorizationServerConfigurer =
+                new OAuth2AuthorizationServerConfigurer<>();
+
+        RequestMatcher endpointsMatcher = authorizationServerConfigurer
+                .getEndpointsMatcher();
+
+        http
+                .requestMatcher(endpointsMatcher)
+                .authorizeRequests(authorizeRequests ->
+                        authorizeRequests.anyRequest().authenticated()
+                )
+                .csrf(csrf -> csrf.ignoringRequestMatchers(endpointsMatcher))
+                .apply(authorizationServerConfigurer);
+
+        authorizationServerConfigurer
+                .tokenGenerator(tokenGenerator());
+
         http
                 .exceptionHandling((exceptions) -> exceptions
                         .authenticationEntryPoint(
@@ -110,6 +127,8 @@ public class AuthorizationServerConfig {
                     // token配置
                     .tokenSettings(TokenSettings.builder()
                             .accessTokenTimeToLive(Duration.ofMinutes(365))
+                            .accessTokenFormat(OAuth2TokenFormat.REFERENCE) // 生成“不透明”令牌
+//                            .accessTokenFormat(OAuth2TokenFormat.SELF_CONTAINED) // 生成jwt
                             .build())
                     .build();
              registeredClientRepository.save(registeredClient);
@@ -117,7 +136,6 @@ public class AuthorizationServerConfig {
         return registeredClientRepository;
     }
 
-    @Bean
     public JWKSource<SecurityContext> jwkSource() {
         KeyPair keyPair = generateRsaKey();
         RSAPublicKey publicKey = (RSAPublicKey) keyPair.getPublic();
@@ -128,6 +146,25 @@ public class AuthorizationServerConfig {
                 .build();
         JWKSet jwkSet = new JWKSet(rsaKey);
         return new ImmutableJWKSet<>(jwkSet);
+    }
+
+    @Bean
+    public OAuth2TokenGenerator<?> tokenGenerator() {
+        JwtGenerator jwtGenerator = new JwtGenerator(new NimbusJwtEncoder(jwkSource()));
+        OAuth2AccessTokenGenerator accessTokenGenerator = new OAuth2AccessTokenGenerator();
+        accessTokenGenerator.setAccessTokenCustomizer(accessTokenCustomizer());
+        OAuth2RefreshTokenGenerator refreshTokenGenerator = new OAuth2RefreshTokenGenerator();
+        return new DelegatingOAuth2TokenGenerator(
+                jwtGenerator, accessTokenGenerator, refreshTokenGenerator);
+    }
+
+    @Bean
+    public OAuth2TokenCustomizer<OAuth2TokenClaimsContext> accessTokenCustomizer() {
+        return context -> {
+            OAuth2TokenClaimsSet.Builder claims = context.getClaims();
+            // Customize claims
+            claims.claim("app","xhuicloud");
+        };
     }
 
     private static KeyPair generateRsaKey() {

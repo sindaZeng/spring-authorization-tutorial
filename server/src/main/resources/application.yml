@@ -2,9 +2,9 @@ server:
   port: 8080
 spring:
   datasource:
-    url: jdbc:mysql://127.0.0.1:3306/authorization
+    url: jdbc:mysql://rm-bp149ki7cte7mesg62o.mysql.rds.aliyuncs.com:3306/authorization
     username: root
-    password: root
+    password: Xhuicloud@123
     driver-class-name: com.mysql.jdbc.Driver
 logging:
   level:
