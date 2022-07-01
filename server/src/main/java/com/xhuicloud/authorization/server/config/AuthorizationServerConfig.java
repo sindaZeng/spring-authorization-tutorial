@@ -125,8 +125,8 @@ public class AuthorizationServerConfig {
                     // token配置
                     .tokenSettings(TokenSettings.builder()
                             .accessTokenTimeToLive(Duration.ofDays(365))
-//                            .accessTokenFormat(OAuth2TokenFormat.REFERENCE) // 生成“不透明”令牌
-                            .accessTokenFormat(OAuth2TokenFormat.SELF_CONTAINED) // 生成jwt
+                            .accessTokenFormat(OAuth2TokenFormat.REFERENCE) // 生成“不透明”令牌
+//                            .accessTokenFormat(OAuth2TokenFormat.SELF_CONTAINED) // 生成jwt
                             .build())
                     .build();
              registeredClientRepository.save(registeredClient);
@@ -146,24 +146,24 @@ public class AuthorizationServerConfig {
         return (jwkSelector, securityContext) -> jwkSelector.select(jwkSet);
     }
 
-//    @Bean
-//    public OAuth2TokenGenerator<?> tokenGenerator() {
-//        JwtGenerator jwtGenerator = new JwtGenerator(new NimbusJwtEncoder(jwkSource()));
-//        OAuth2AccessTokenGenerator accessTokenGenerator = new OAuth2AccessTokenGenerator();
-//        accessTokenGenerator.setAccessTokenCustomizer(accessTokenCustomizer());
-//        OAuth2RefreshTokenGenerator refreshTokenGenerator = new OAuth2RefreshTokenGenerator();
-//        return new DelegatingOAuth2TokenGenerator(
-//                jwtGenerator, accessTokenGenerator, refreshTokenGenerator);
-//    }
+    @Bean
+    public OAuth2TokenGenerator<?> tokenGenerator() {
+        JwtGenerator jwtGenerator = new JwtGenerator(new NimbusJwtEncoder(jwkSource()));
+        OAuth2AccessTokenGenerator accessTokenGenerator = new OAuth2AccessTokenGenerator();
+        accessTokenGenerator.setAccessTokenCustomizer(accessTokenCustomizer());
+        OAuth2RefreshTokenGenerator refreshTokenGenerator = new OAuth2RefreshTokenGenerator();
+        return new DelegatingOAuth2TokenGenerator(
+                jwtGenerator, accessTokenGenerator, refreshTokenGenerator);
+    }
 
-//    @Bean
-//    public OAuth2TokenCustomizer<OAuth2TokenClaimsContext> accessTokenCustomizer() {
-//        return context -> {
-//            OAuth2TokenClaimsSet.Builder claims = context.getClaims();
-//            // Customize claims
-//            claims.claim("app","xhuicloud");
-//        };
-//    }
+    @Bean
+    public OAuth2TokenCustomizer<OAuth2TokenClaimsContext> accessTokenCustomizer() {
+        return context -> {
+            OAuth2TokenClaimsSet.Builder claims = context.getClaims();
+            // Customize claims
+            claims.claim("app","xhuicloud");
+        };
+    }
 
     @Bean
     public ProviderSettings providerSettings() {
