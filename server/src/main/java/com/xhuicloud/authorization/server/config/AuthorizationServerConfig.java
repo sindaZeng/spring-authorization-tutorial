@@ -2,9 +2,9 @@ package com.xhuicloud.authorization.server.config;
 
 import com.nimbusds.jose.jwk.JWKSet;
 import com.nimbusds.jose.jwk.RSAKey;
-import com.nimbusds.jose.jwk.source.ImmutableJWKSet;
 import com.nimbusds.jose.jwk.source.JWKSource;
 import com.nimbusds.jose.proc.SecurityContext;
+import com.xhuicloud.authorization.server.jose.Jwks;
 import org.springframework.context.annotation.Bean;
 import org.springframework.core.annotation.Order;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -35,34 +35,32 @@ import org.springframework.security.web.util.matcher.RequestMatcher;
 
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
-import java.security.interfaces.RSAPrivateKey;
-import java.security.interfaces.RSAPublicKey;
 import java.time.Duration;
 import java.util.UUID;
 
-@EnableWebSecurity
+@EnableWebSecurity(debug = true)
 public class AuthorizationServerConfig {
 
     @Bean
     @Order(1)
     public SecurityFilterChain authorizationServerSecurityFilterChain(HttpSecurity http)
             throws Exception {
-        OAuth2AuthorizationServerConfigurer<HttpSecurity> authorizationServerConfigurer =
-                new OAuth2AuthorizationServerConfigurer<>();
-
-        RequestMatcher endpointsMatcher = authorizationServerConfigurer
-                .getEndpointsMatcher();
-
-        http
-                .requestMatcher(endpointsMatcher)
-                .authorizeRequests(authorizeRequests ->
-                        authorizeRequests.anyRequest().authenticated()
-                )
-                .csrf(csrf -> csrf.ignoringRequestMatchers(endpointsMatcher))
-                .apply(authorizationServerConfigurer);
-
-        authorizationServerConfigurer
-                .tokenGenerator(tokenGenerator());
+//        OAuth2AuthorizationServerConfigurer<HttpSecurity> authorizationServerConfigurer =
+//                new OAuth2AuthorizationServerConfigurer<>();
+//
+//        RequestMatcher endpointsMatcher = authorizationServerConfigurer
+//                .getEndpointsMatcher();
+//
+//        http
+//                .requestMatcher(endpointsMatcher)
+//                .authorizeRequests(authorizeRequests ->
+//                        authorizeRequests.anyRequest().authenticated()
+//                )
+//                .csrf(csrf -> csrf.ignoringRequestMatchers(endpointsMatcher))
+//                .apply(authorizationServerConfigurer);
+        OAuth2AuthorizationServerConfiguration.applyDefaultSecurity(http);
+//        authorizationServerConfigurer
+//                .tokenGenerator(tokenGenerator());
 
         http
                 .exceptionHandling((exceptions) -> exceptions
@@ -126,9 +124,9 @@ public class AuthorizationServerConfig {
                             .build())
                     // token配置
                     .tokenSettings(TokenSettings.builder()
-                            .accessTokenTimeToLive(Duration.ofMinutes(365))
-                            .accessTokenFormat(OAuth2TokenFormat.REFERENCE) // 生成“不透明”令牌
-//                            .accessTokenFormat(OAuth2TokenFormat.SELF_CONTAINED) // 生成jwt
+                            .accessTokenTimeToLive(Duration.ofDays(365))
+//                            .accessTokenFormat(OAuth2TokenFormat.REFERENCE) // 生成“不透明”令牌
+                            .accessTokenFormat(OAuth2TokenFormat.SELF_CONTAINED) // 生成jwt
                             .build())
                     .build();
              registeredClientRepository.save(registeredClient);
@@ -136,48 +134,36 @@ public class AuthorizationServerConfig {
         return registeredClientRepository;
     }
 
+    /**
+     * 配置此Bean 才会拥有/oauth2/jwks端点 用于获取解密密钥
+     *
+     * @return
+     */
+    @Bean
     public JWKSource<SecurityContext> jwkSource() {
-        KeyPair keyPair = generateRsaKey();
-        RSAPublicKey publicKey = (RSAPublicKey) keyPair.getPublic();
-        RSAPrivateKey privateKey = (RSAPrivateKey) keyPair.getPrivate();
-        RSAKey rsaKey = new RSAKey.Builder(publicKey)
-                .privateKey(privateKey)
-                .keyID(UUID.randomUUID().toString())
-                .build();
+        RSAKey rsaKey = Jwks.generateRsa();
         JWKSet jwkSet = new JWKSet(rsaKey);
-        return new ImmutableJWKSet<>(jwkSet);
+        return (jwkSelector, securityContext) -> jwkSelector.select(jwkSet);
     }
 
-    @Bean
-    public OAuth2TokenGenerator<?> tokenGenerator() {
-        JwtGenerator jwtGenerator = new JwtGenerator(new NimbusJwtEncoder(jwkSource()));
-        OAuth2AccessTokenGenerator accessTokenGenerator = new OAuth2AccessTokenGenerator();
-        accessTokenGenerator.setAccessTokenCustomizer(accessTokenCustomizer());
-        OAuth2RefreshTokenGenerator refreshTokenGenerator = new OAuth2RefreshTokenGenerator();
-        return new DelegatingOAuth2TokenGenerator(
-                jwtGenerator, accessTokenGenerator, refreshTokenGenerator);
-    }
+//    @Bean
+//    public OAuth2TokenGenerator<?> tokenGenerator() {
+//        JwtGenerator jwtGenerator = new JwtGenerator(new NimbusJwtEncoder(jwkSource()));
+//        OAuth2AccessTokenGenerator accessTokenGenerator = new OAuth2AccessTokenGenerator();
+//        accessTokenGenerator.setAccessTokenCustomizer(accessTokenCustomizer());
+//        OAuth2RefreshTokenGenerator refreshTokenGenerator = new OAuth2RefreshTokenGenerator();
+//        return new DelegatingOAuth2TokenGenerator(
+//                jwtGenerator, accessTokenGenerator, refreshTokenGenerator);
+//    }
 
-    @Bean
-    public OAuth2TokenCustomizer<OAuth2TokenClaimsContext> accessTokenCustomizer() {
-        return context -> {
-            OAuth2TokenClaimsSet.Builder claims = context.getClaims();
-            // Customize claims
-            claims.claim("app","xhuicloud");
-        };
-    }
-
-    private static KeyPair generateRsaKey() {
-        KeyPair keyPair;
-        try {
-            KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("RSA");
-            keyPairGenerator.initialize(2048);
-            keyPair = keyPairGenerator.generateKeyPair();
-        } catch (Exception ex) {
-            throw new IllegalStateException(ex);
-        }
-        return keyPair;
-    }
+//    @Bean
+//    public OAuth2TokenCustomizer<OAuth2TokenClaimsContext> accessTokenCustomizer() {
+//        return context -> {
+//            OAuth2TokenClaimsSet.Builder claims = context.getClaims();
+//            // Customize claims
+//            claims.claim("app","xhuicloud");
+//        };
+//    }
 
     @Bean
     public ProviderSettings providerSettings() {

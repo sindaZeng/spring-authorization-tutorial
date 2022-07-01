@@ -1,0 +1,17 @@
+server:
+  port: 9090
+
+spring:
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: http://localhost:8080
+
+logging:
+  level:
+    root: debug
+    org.springframework.web: INFO
+    org.springframework.security: debug
+    org.springframework.security.oauth2: debug
+#    org.springframework.boot.autoconfigure: DEBUG
