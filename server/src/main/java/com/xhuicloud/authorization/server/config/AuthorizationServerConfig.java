@@ -12,6 +12,7 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.OAuth2AuthorizationServerConfiguration;
 import org.springframework.security.config.annotation.web.configurers.oauth2.server.authorization.OAuth2AuthorizationServerConfigurer;
+import org.springframework.security.config.annotation.web.configurers.oauth2.server.authorization.OAuth2ClientAuthenticationConfigurer;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -45,6 +46,9 @@ public class AuthorizationServerConfig {
     @Order(1)
     public SecurityFilterChain authorizationServerSecurityFilterChain(HttpSecurity http)
             throws Exception {
+
+        OAuth2AuthorizationServerConfiguration.applyDefaultSecurity(http);
+
 //        OAuth2AuthorizationServerConfigurer<HttpSecurity> authorizationServerConfigurer =
 //                new OAuth2AuthorizationServerConfigurer<>();
 //
@@ -58,7 +62,6 @@ public class AuthorizationServerConfig {
 //                )
 //                .csrf(csrf -> csrf.ignoringRequestMatchers(endpointsMatcher))
 //                .apply(authorizationServerConfigurer);
-        OAuth2AuthorizationServerConfiguration.applyDefaultSecurity(http);
 //        authorizationServerConfigurer
 //                .tokenGenerator(tokenGenerator());
 
@@ -99,6 +102,12 @@ public class AuthorizationServerConfig {
                 .build();
         return new InMemoryUserDetailsManager(userDetails);
     }
+    @Bean
+    public OAuth2TokenGenerator oAuth2TokenGenerator() {
+        CustomOAuth2TokenGenerator accessTokenGenerator = new CustomOAuth2TokenGenerator();
+        return new DelegatingOAuth2TokenGenerator(accessTokenGenerator, new OAuth2RefreshTokenGenerator());
+    }
+
 
     @Bean
     public RegisteredClientRepository registeredClientRepository(JdbcTemplate jdbcTemplate) {
@@ -144,16 +153,6 @@ public class AuthorizationServerConfig {
         RSAKey rsaKey = Jwks.generateRsa();
         JWKSet jwkSet = new JWKSet(rsaKey);
         return (jwkSelector, securityContext) -> jwkSelector.select(jwkSet);
-    }
-
-    @Bean
-    public OAuth2TokenGenerator<?> tokenGenerator() {
-        JwtGenerator jwtGenerator = new JwtGenerator(new NimbusJwtEncoder(jwkSource()));
-        OAuth2AccessTokenGenerator accessTokenGenerator = new OAuth2AccessTokenGenerator();
-        accessTokenGenerator.setAccessTokenCustomizer(accessTokenCustomizer());
-        OAuth2RefreshTokenGenerator refreshTokenGenerator = new OAuth2RefreshTokenGenerator();
-        return new DelegatingOAuth2TokenGenerator(
-                jwtGenerator, accessTokenGenerator, refreshTokenGenerator);
     }
 
     @Bean
