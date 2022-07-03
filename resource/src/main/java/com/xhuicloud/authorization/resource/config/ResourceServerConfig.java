@@ -10,17 +10,17 @@ import org.springframework.security.web.SecurityFilterChain;
 @EnableWebSecurity(debug = true)
 public class ResourceServerConfig {
 
-    @Autowired
-    private OpaqueTokenIntrospector opaqueTokenIntrospector;
-    @Autowired
-    private CustomBearerTokenResolver customBearerTokenResolver;
+//    @Autowired
+//    private OpaqueTokenIntrospector opaqueTokenIntrospector;
+//    @Autowired
+//    private CustomBearerTokenResolver customBearerTokenResolver;
 
     @Bean
     SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-//        http.oauth2ResourceServer().jwt(); // jwt 使用这个
-        http.oauth2ResourceServer().opaqueToken(opaqueTokenConfigurer -> {
-            opaqueTokenConfigurer.introspector(opaqueTokenIntrospector);
-        }).bearerTokenResolver(customBearerTokenResolver); // 不透明令牌模式
+        http.oauth2ResourceServer().jwt(); // jwt 使用这个
+//        http.oauth2ResourceServer().opaqueToken(opaqueTokenConfigurer -> {
+//            opaqueTokenConfigurer.introspector(opaqueTokenIntrospector);
+//        }).bearerTokenResolver(customBearerTokenResolver); // 不透明令牌模式
         return http.build();
     }
 

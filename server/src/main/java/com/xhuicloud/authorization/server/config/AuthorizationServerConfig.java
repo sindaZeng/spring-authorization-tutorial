@@ -102,7 +102,7 @@ public class AuthorizationServerConfig {
                 .build();
         return new InMemoryUserDetailsManager(userDetails);
     }
-    @Bean
+//    @Bean
     public OAuth2TokenGenerator oAuth2TokenGenerator() {
         CustomOAuth2TokenGenerator accessTokenGenerator = new CustomOAuth2TokenGenerator();
         return new DelegatingOAuth2TokenGenerator(accessTokenGenerator, new OAuth2RefreshTokenGenerator());
@@ -134,8 +134,8 @@ public class AuthorizationServerConfig {
                     // token配置
                     .tokenSettings(TokenSettings.builder()
                             .accessTokenTimeToLive(Duration.ofDays(365))
-                            .accessTokenFormat(OAuth2TokenFormat.REFERENCE) // 生成“不透明”令牌
-//                            .accessTokenFormat(OAuth2TokenFormat.SELF_CONTAINED) // 生成jwt
+//                            .accessTokenFormat(OAuth2TokenFormat.REFERENCE) // 生成“不透明”令牌
+                            .accessTokenFormat(OAuth2TokenFormat.SELF_CONTAINED) // 生成jwt
                             .build())
                     .build();
              registeredClientRepository.save(registeredClient);
