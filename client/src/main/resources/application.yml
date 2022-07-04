@@ -1,0 +1,42 @@
+server:
+  port: 9091
+
+logging:
+  level:
+    root: INFO
+    org.springframework.web: INFO
+    org.springframework.security: INFO
+    org.springframework.security.oauth2: INFO
+#    org.springframework.boot.autoconfigure: DEBUG
+
+spring:
+  security:
+    oauth2:
+      client:
+        registration:
+          oidc:
+            provider: spring
+            client-id: client
+            client-secret: secret
+            authorization-grant-type: authorization_code
+            redirect-uri: "http://127.0.0.1:9091/login/oauth2/code/{registrationId}"
+            scope: openid
+            client-name: oidc
+          cac:
+            provider: spring
+            client-id: client
+            client-secret: secret
+            authorization-grant-type: authorization_code
+            redirect-uri: "http://127.0.0.1:9091"
+            scope: message.read,message.write
+            client-name: client-authorization-code
+          client-client-credentials:
+            provider: spring
+            client-id: client
+            client-secret: secret
+            authorization-grant-type: client_credentials
+            scope: message.read,message.write
+            client-name: client-client-credentials
+        provider:
+          spring:
+            issuer-uri: http://localhost:8080

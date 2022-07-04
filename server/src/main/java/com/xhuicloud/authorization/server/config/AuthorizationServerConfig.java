@@ -122,7 +122,8 @@ public class AuthorizationServerConfig {
                     .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
                     .authorizationGrantType(AuthorizationGrantType.REFRESH_TOKEN)
                     .authorizationGrantType(AuthorizationGrantType.CLIENT_CREDENTIALS)
-//                .redirectUri("http://127.0.0.1:9090/authorized")
+                    .redirectUri("http://127.0.0.1:9091")
+                    .redirectUri("http://127.0.0.1:9091/login/oauth2/code/oidc")
                     .redirectUri("https://baidu.com")
                     .scope(OidcScopes.OPENID)
                     .scope("message.read")
@@ -140,6 +141,25 @@ public class AuthorizationServerConfig {
                     .build();
              registeredClientRepository.save(registeredClient);
         }
+
+        RegisteredClient registeredClient = RegisteredClient.withId(UUID.randomUUID().toString())
+                .clientId("messaging-client")
+                .clientSecret("{noop}secret")
+                .clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_BASIC)
+                .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
+                .authorizationGrantType(AuthorizationGrantType.REFRESH_TOKEN)
+                .authorizationGrantType(AuthorizationGrantType.CLIENT_CREDENTIALS)
+                .redirectUri("http://127.0.0.1:5555/login/oauth2/code/messaging-client-oidc")
+                .redirectUri("http://127.0.0.1:5555/authorized")
+                .scope(OidcScopes.OPENID)
+                .scope("message.read")
+                .scope("message.write")
+                .clientSettings(ClientSettings.builder().requireAuthorizationConsent(true).build())
+                .tokenSettings(TokenSettings.builder()
+                        .accessTokenTimeToLive(Duration.ofDays(365))
+                        .build())
+                .build();
+        registeredClientRepository.save(registeredClient);
         return registeredClientRepository;
     }
 
