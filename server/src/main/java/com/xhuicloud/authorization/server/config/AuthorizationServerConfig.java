@@ -112,9 +112,9 @@ public class AuthorizationServerConfig {
     @Bean
     public RegisteredClientRepository registeredClientRepository(JdbcTemplate jdbcTemplate) {
         JdbcRegisteredClientRepository registeredClientRepository = new JdbcRegisteredClientRepository(jdbcTemplate);
-        RegisteredClient client = registeredClientRepository.findByClientId("client");
-        if (client == null) {
-            RegisteredClient registeredClient = RegisteredClient.withId(UUID.randomUUID().toString())
+//        RegisteredClient client = registeredClientRepository.findByClientId("client");
+//        if (client == null) {
+            RegisteredClient registeredClient1 = RegisteredClient.withId(UUID.randomUUID().toString())
                     .clientId("client")
                     .clientSecret("{noop}secret")
                     // 授权方法
@@ -139,8 +139,8 @@ public class AuthorizationServerConfig {
                             .accessTokenFormat(OAuth2TokenFormat.SELF_CONTAINED) // 生成jwt
                             .build())
                     .build();
-             registeredClientRepository.save(registeredClient);
-        }
+             registeredClientRepository.save(registeredClient1);
+//        }
 
         RegisteredClient registeredClient = RegisteredClient.withId(UUID.randomUUID().toString())
                 .clientId("messaging-client")
