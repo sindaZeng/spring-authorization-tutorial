@@ -1,0 +1,27 @@
+server:
+  port: 9092
+
+logging:
+  level:
+    root: INFO
+    org.springframework.web: INFO
+    org.springframework.security: INFO
+    org.springframework.security.oauth2: INFO
+#    org.springframework.boot.autoconfigure: DEBUG
+
+spring:
+  security:
+    oauth2:
+      client:
+        registration:
+          client2-authorization-code:
+            provider: spring
+            client-id: client2
+            client-secret: secret2
+            authorization-grant-type: authorization_code
+            redirect-uri: "http://127.0.0.1:9092/authorization"
+            scope: message.read,message.write
+            client-name: client2-authorization-code
+        provider:
+          spring:
+            issuer-uri: http://localhost:8080

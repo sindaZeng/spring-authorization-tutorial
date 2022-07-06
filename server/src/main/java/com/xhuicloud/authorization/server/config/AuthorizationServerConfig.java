@@ -143,15 +143,10 @@ public class AuthorizationServerConfig {
 //        }
 
         RegisteredClient registeredClient = RegisteredClient.withId(UUID.randomUUID().toString())
-                .clientId("messaging-client")
-                .clientSecret("{noop}secret")
-                .clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_BASIC)
+                .clientId("client2")
+                .clientSecret("{noop}secret2")
                 .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
-                .authorizationGrantType(AuthorizationGrantType.REFRESH_TOKEN)
-                .authorizationGrantType(AuthorizationGrantType.CLIENT_CREDENTIALS)
-                .redirectUri("http://127.0.0.1:5555/login/oauth2/code/messaging-client-oidc")
-                .redirectUri("http://127.0.0.1:5555/authorized")
-                .scope(OidcScopes.OPENID)
+                .redirectUri("http://127.0.0.1:9092/authorization")
                 .scope("message.read")
                 .scope("message.write")
                 .clientSettings(ClientSettings.builder().requireAuthorizationConsent(true).build())
