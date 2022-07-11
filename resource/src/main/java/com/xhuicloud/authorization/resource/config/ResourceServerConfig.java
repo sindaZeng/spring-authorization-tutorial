@@ -17,6 +17,8 @@ public class ResourceServerConfig {
 
     @Bean
     SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+//        http .authorizeRequests(authorizeRequests ->
+//                authorizeRequests.anyRequest().authenticated()
         http.oauth2ResourceServer().jwt(); // jwt 使用这个
 //        http.oauth2ResourceServer().opaqueToken(opaqueTokenConfigurer -> {
 //            opaqueTokenConfigurer.introspector(opaqueTokenIntrospector);
